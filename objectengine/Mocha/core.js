@@ -19,7 +19,7 @@
 
 
 /**
- * Resolves url path to page's child element with matching name
+ * Resolves url path to child element with matching name
  */
 function getChildElement(name) {
     return this.get(name);
@@ -48,10 +48,10 @@ function notfound_action(){
     var names = req.path.split('/');
     
     // resolve path names against the object hierarchy
-    var page = root;
+    var obj = root;
     do {
-        if (page.get(names[0]))
-            page = page.get(names[0]);
+        if (obj.get(names[0]))
+            obj = obj.get(names[0]);
         else
             break;
     }
@@ -61,16 +61,16 @@ function notfound_action(){
     idempotentAction = names[0] +='_'+ req.method.toLowerCase();
     
     // call a softcoded action
-    if (page.actions[idempotentAction])
-        page.actions[idempotentAction].call(page,names);
-    else if (page.actions[names[0]])
-        page.actions[names[0]].call(page,names);
+    if (obj.actions[idempotentAction])
+        obj.actions[idempotentAction].call(obj,names);
+    else if (obj.actions[names[0]])
+        obj.actions[names[0]].call(obj,names);
     else {
-        output = page.views[names[0]];
+        output = obj.views[names[0]];
         if (output.toXMLString())
             res.write(output);
         else 
-            res.redirect(page.href());
+            res.redirect(obj.href());
     }
 }
 
@@ -85,15 +85,15 @@ function render(skin) {
 
 /**
  * Provides the an array of the path breadcrumbs from
- * the this Page object up to the root object.
+ * the this Mocha object up to the root object.
  */
-Page.prototype.__defineGetter__('path',function() {
+Mocha.prototype.__defineGetter__('path',function() {
     var breadcrumbs = [];
-    var page = this;
+    var obj = this;
     do {
-        breadcrumbs.push(page);
+        breadcrumbs.push(obj);
     }
-    while (page = page._parent);
+    while (obj = obj._parent);
     
     return breadcrumbs;
 });
@@ -102,15 +102,15 @@ Page.prototype.__defineGetter__('path',function() {
 /**
  * Resolver getters and setters
  */
-Page.resolver = function(handle){
+Mocha.resolver = function(handle){
     // build resolver function
     var fnc = function() {
         
-        // setup closure for current page instance
-        var page = this;
+        // setup closure for current obj instance
+        var obj = this;
     
         // define metaproperty handlers
-        var obj = {__metaobject__:{
+        var resolver = {__metaobject__:{
         
             // define getter for metaproperties
             get : function(thisObj,prop) {
@@ -131,7 +131,7 @@ Page.resolver = function(handle){
                 var property, overrider;
                 
                 // lookup an overriding property in this instance's path
-                var next = page;
+                var next = obj;
                 do {
                     // first check if we are looking for idempotent action methods
                     if (idempotentSuffix) {
@@ -158,12 +158,12 @@ Page.resolver = function(handle){
                         property = prop;
                     
                     // if there is a control for this view, let it handle it first
-                    if (page.controls[prop])
-                        property = page.controls[prop].call(page,property);
+                    if (obj.controls[prop])
+                        property = obj.controls[prop].call(obj,property);
                     
                     // render the view to e4x if the control has not done so already
                     if (typeof property != 'xml')
-                        property = page.render(property);
+                        property = obj.render(property);
                 }
                 else {
                     // first handle overrides for idempotent action methods
@@ -176,11 +176,11 @@ Page.resolver = function(handle){
                         
                     // then idempotent action methods inherited from the prototype chain
                     else if (idempotentSuffix)
-                        property = page[prop.slice(0,prop.lastIndexOf('_')) +'_action_'+ idempotentSuffix];
+                        property = obj[prop.slice(0,prop.lastIndexOf('_')) +'_action_'+ idempotentSuffix];
                     
                     // then macros, controls and standard actions methods inherited from the prototype chain
                     else 
-                        property = page[prop +'_'+ handle.slice(0,-1)];
+                        property = obj[prop +'_'+ handle.slice(0,-1)];
                 }
                 
                 // return the resolved property
@@ -195,15 +195,15 @@ Page.resolver = function(handle){
                         || prop.endsWith('_post')
                         || prop.endsWith('_put')
                         || prop.endsWith('_delete'))
-                    page[prop] = value;
+                    obj[prop] = value;
                 // or set views, controls and standard actions
                 else
-                    page[prop +'_'+ handle.slice(0,-1)] = value;
+                    obj[prop +'_'+ handle.slice(0,-1)] = value;
             }
         }};
         
         // return object containing metaproperty handlers
-        return obj;
+        return resolver;
     }
     // return the built resolver function
     return fnc;
@@ -213,38 +213,38 @@ Page.resolver = function(handle){
 /**
  * Handles views object, resolving to appropriate getters and setters
  */
-Page.prototype.__defineGetter__('views',Page.resolver('views'))
+Mocha.prototype.__defineGetter__('views',Mocha.resolver('views'))
 
 
 /**
  * Handles controls object, resolving to appropriate getters and setters
  */
-Page.prototype.__defineGetter__('controls',Page.resolver('controls'))
+Mocha.prototype.__defineGetter__('controls',Mocha.resolver('controls'))
 
 
 /**
  * Handles actions object, resolving to appropriate getters and setters
  */
-Page.prototype.__defineGetter__('actions',Page.resolver('actions'))
+Mocha.prototype.__defineGetter__('actions',Mocha.resolver('actions'))
 
 
 /**
  * Handles macros object, resolving to appropriate getters and setters
  */
-Page.prototype.__defineGetter__('macros',Page.resolver('macros'))
+Mocha.prototype.__defineGetter__('macros',Mocha.resolver('macros'))
 
 
 /**
  * Handles access object, resolving to appropriate getters and setters
  */
-Page.prototype.__defineGetter__('access',function() {
+Mocha.prototype.__defineGetter__('access',function() {
         
-    // setup closure for current page instance
-    var page = this;
+    // setup closure for current obj instance
+    var obj = this;
     var userprefix = 'user_';
 
     // define metaproperty handlers
-    var obj = {__metaobject__:{
+    var resolver = {__metaobject__:{
     
         // define getter for metaproperties
         get : function(thisObj,prop) {
@@ -276,25 +276,25 @@ Page.prototype.__defineGetter__('access',function() {
                     
                     // check for a specific access right for this user or group
                     
-                    // first check for an overriding access right on the current page
-                    if (page.hasOwnProperty('access_json') 
-                            && page.access_json.hasOwnProperty(prop) 
-                            && page.access_json[prop].hasOwnProperty(tag))
-                        result = page.access_json[prop][tag];
+                    // first check for an overriding access right on the current obj
+                    if (obj.hasOwnProperty('access_json') 
+                            && obj.access_json.hasOwnProperty(prop) 
+                            && obj.access_json[prop].hasOwnProperty(tag))
+                        result = obj.access_json[prop][tag];
                     // then check for overriding rights in the path chain
-                    else if (page._parent)
-                        result = page._parent.access[prop].check(id,'skip');
+                    else if (obj._parent)
+                        result = obj._parent.access[prop].check(id,'skip');
                     
                     if (!result && !skip) {
                     
                         // also check for an access right inherited from the prototype chain
-                        if (page.access_json 
-                                && page.access_json[prop] 
-                                && page.access_json[prop][tag])
-                            result = page.access_json[prop][tag];
+                        if (obj.access_json 
+                                && obj.access_json[prop] 
+                                && obj.access_json[prop][tag])
+                            result = obj.access_json[prop][tag];
                         
                         // and finally for an access right inherited from group memberships
-                        var next = page;
+                        var next = obj;
                         do {
                             if (next.hasOwnProperty('access_json')) {
                                 for (var group in next.access_json) {
@@ -329,12 +329,12 @@ Page.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!page.access_json)
-                        page.access_json = {};
-                    if (!page.access_json[prop])
-                        page.access_json[prop] = {};
-                    page.access_json[prop][id] = 1;
-                    page.persist();
+                    if (!obj.access_json)
+                        obj.access_json = {};
+                    if (!obj.access_json[prop])
+                        obj.access_json[prop] = {};
+                    obj.access_json[prop][id] = 1;
+                    obj.persist();
                     return true;
                 },
                 
@@ -348,12 +348,12 @@ Page.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!page.access_json)
-                        page.access_json = {};
-                    if (!page.access_json[prop])
-                        page.access_json[prop] = {};
-                    page.access_json[prop][id] = -1;
-                    page.persist();
+                    if (!obj.access_json)
+                        obj.access_json = {};
+                    if (!obj.access_json[prop])
+                        obj.access_json[prop] = {};
+                    obj.access_json[prop][id] = -1;
+                    obj.persist();
                     return true;
                 },
                 
@@ -367,12 +367,12 @@ Page.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!page.access_json
-                            || !page.access_json[prop]
-                            || !page.access_json[prop][id])
+                    if (!obj.access_json
+                            || !obj.access_json[prop]
+                            || !obj.access_json[prop][id])
                         return false;
-                    delete page.access_json[prop][id];
-                    page.persist();
+                    delete obj.access_json[prop][id];
+                    obj.persist();
                     return true;
                 }
             };
@@ -384,7 +384,7 @@ Page.prototype.__defineGetter__('access',function() {
     }};
     
     // return object containing metaproperty handlers
-    return obj;
+    return resolver;
 });
 
 
