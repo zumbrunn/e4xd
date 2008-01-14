@@ -2,7 +2,7 @@
  *  e4xd javascript server-side - openmocha reduced to the max
  * 
  *  Copyright 2008 Chris Zumbrunn <chris@zumbrunn.com> http://zumbrunn.com
- *  version 0.1, January 11, 2008
+ *  version 0.5, January 14, 2008
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -232,6 +232,160 @@ Page.prototype.__defineGetter__('actions',Page.resolver('actions'))
  * Handles macros object, resolving to appropriate getters and setters
  */
 Page.prototype.__defineGetter__('macros',Page.resolver('macros'))
+
+
+/**
+ * Handles access object, resolving to appropriate getters and setters
+ */
+Page.prototype.__defineGetter__('access',function() {
+        
+    // setup closure for current page instance
+    var page = this;
+    var userprefix = 'user_';
+
+    // define metaproperty handlers
+    var obj = {__metaobject__:{
+    
+        // define getter for metaproperties
+        get : function(thisObj,prop) {
+            if (thisObj[prop])
+                return thisObj[prop];
+            
+            if (!prop)
+                return prop;
+            
+            var property, overrider;
+            
+            property = {
+                
+                /**
+                 * Returns true if the user or group has this access right
+                 */
+                check : function(id,skip){
+                    var result = 0;
+                    var tag = id;
+                    
+                    // adds the user id prefix if the lookup is for a specific user
+                    if (id instanceof User)
+                        tag = userprefix + id._id;
+                    // adds the user id prefix if the lookup is not for a group
+                    else if (!id && session.user && session.user._id)
+                        tag = userprefix + session.user._id;                        
+                    else if (!id)
+                        tag = 'unknown';
+                    
+                    // check for a specific access right for this user or group
+                    
+                    // first check for an overriding access right on the current page
+                    if (page.hasOwnProperty('access_json') 
+                            && page.access_json.hasOwnProperty(prop) 
+                            && page.access_json[prop].hasOwnProperty(tag))
+                        result = page.access_json[prop][tag];
+                    // then check for overriding rights in the path chain
+                    else if (page._parent)
+                        result = page._parent.access[prop].check(id,'skip');
+                    
+                    if (!result && !skip) {
+                    
+                        // also check for an access right inherited from the prototype chain
+                        if (page.access_json 
+                                && page.access_json[prop] 
+                                && page.access_json[prop][tag])
+                            result = page.access_json[prop][tag];
+                        
+                        // and finally for an access right inherited from group memberships
+                        var next = page;
+                        do {
+                            if (next.hasOwnProperty('access_json')) {
+                                for (var group in next.access_json) {
+                                    if (!group.startsWith(userprefix)) {
+                                        
+                                        // look for a group memberships
+                                        if (next.access[prop].check(group,'skip')) {
+                                            // and check access rights in that group
+                                            result = next.access[group].check(id);
+                                            
+                                            // if we discover an exclude, it overrules an include
+                                            if (result == -1)
+                                                break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        while (next = next._parent && !result);
+                    }
+                    
+                    return skip ? result : (result == 1) ? true : false;
+                },
+                
+                /**
+                 * Includes the user or group for this access right
+                 */
+                include : function(id){
+                    if (id instanceof User)
+                        id = userprefix + id._id;
+                    else if (!id && session.user && session.user._id)
+                        id = userprefix + session.user._id;
+                    if (!id)
+                        return false;
+                    if (!page.access_json)
+                        page.access_json = {};
+                    if (!page.access_json[prop])
+                        page.access_json[prop] = {};
+                    page.access_json[prop][id] = 1;
+                    page.persist();
+                    return true;
+                },
+                
+                /**
+                 * Excludes the user or group from this access right
+                 */
+                exclude : function(id){
+                    if (id instanceof User)
+                        id = userprefix + id._id;
+                    else if (!id && session.user && session.user._id)
+                        id = userprefix + session.user._id;
+                    if (!id)
+                        return false;
+                    if (!page.access_json)
+                        page.access_json = {};
+                    if (!page.access_json[prop])
+                        page.access_json[prop] = {};
+                    page.access_json[prop][id] = -1;
+                    page.persist();
+                    return true;
+                },
+                
+                /**
+                 * Removes the user or group from this access right
+                 */
+                remove : function(id){
+                    if (id instanceof User)
+                        id = userprefix + id._id;
+                    else if (!id && session.user && session.user._id)
+                        id = userprefix + session.user._id;
+                    if (!id)
+                        return false;
+                    if (!page.access_json
+                            || !page.access_json[prop]
+                            || !page.access_json[prop][id])
+                        return false;
+                    delete page.access_json[prop][id];
+                    page.persist();
+                    return true;
+                }
+            };
+            
+            // return the resolved property
+            return property;
+        }
+            
+    }};
+    
+    // return object containing metaproperty handlers
+    return obj;
+});
 
 
 /**
