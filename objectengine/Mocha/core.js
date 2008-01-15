@@ -2,7 +2,7 @@
  *  e4xd javascript server-side - openmocha reduced to the max
  * 
  *  Copyright 2008 Chris Zumbrunn <chris@zumbrunn.com> http://zumbrunn.com
- *  version 0.5, January 14, 2008
+ *  version 0.6, January 15, 2008
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,14 +29,18 @@ function getChildElement(name) {
 /**
  * Resolves requests to soft-coded actions before hard-coded ones are invoked
  */
-function OLDTESTonRequest() {
-    // let soft-coded actions override
-    if (req.action == 'notfound' && this.actions[req.action]){
-        this.actions[req.action].call(this);
-        res.stop();
+function onRequest() {
+    if (req.action != 'notfound') {
+        
+        // let soft-coded actions override
+        var idempotentAction = req.action +'_'+ req.method.toLowerCase();
+        var action = (this.actions[idempotentAction] || this.actions[req.action]);
+        if (action) {
+            action.call(this);
+            res.stop();
+        }
     }
 }
-
 
 /**
  * Resolve requests with no automatic match
@@ -136,7 +140,7 @@ Mocha.resolver = function(handle){
                     // first check if we are looking for idempotent action methods
                     if (idempotentSuffix) {
                         // and then if their is an idempotent override
-                        if (next.hasOwnProperty(prop)) {
+                        if (next.hasOwnProperty(prop.slice(0,prop.lastIndexOf('_')) +'_action_'+ idempotentSuffix)) {
                             overrider = next;
                             break;
                         }
@@ -168,7 +172,7 @@ Mocha.resolver = function(handle){
                 else {
                     // first handle overrides for idempotent action methods
                     if (overrider && idempotentSuffix)
-                        property = overrider[prop];
+                        property = overrider[prop.slice(0,prop.lastIndexOf('_')) +'_action_'+ idempotentSuffix];
                         
                     // then overrides for macros, controls and standard actions
                     else if (overrider)
