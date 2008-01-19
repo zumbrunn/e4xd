@@ -1,2 +1,0 @@
-app.addRepository('modules/jhino/');
-
