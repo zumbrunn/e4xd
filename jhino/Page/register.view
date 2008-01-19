@@ -1,0 +1,12 @@
+<div class="main">
+    <h2>Register</h2>
+    <% response.message %>
+    <form method="post">
+        <p>Username: <input name="username" type="text" value="<% request.username %>" /></p>
+        <p>E-Mail: <input name="email" type="text" value="<% request.email %>" /></p>
+        <p>Password: <input name="password" type="password" /></p>
+        <p>Password again: <input name="passwordagain" type="password" /></p>
+        <input type="submit" name="register" value="Register" />
+        <input type="submit" name="cancel" value="Cancel" />
+    </form>
+</div>
