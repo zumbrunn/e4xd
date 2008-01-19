@@ -68,6 +68,8 @@ Helma's apps directory.
 You could then start the exmaple app from your manage application 
 or add it to the apps.properties file to have it start automatically.
 
+http://localhost:8080/exampleapp
+
 
 More info and help
 
