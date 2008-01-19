@@ -1,0 +1,9 @@
+<div class="content">
+    <h2>Login</h2>
+    {eval(res.message) || ''}
+    <form method="post">
+        <p>Username: <input name="name" type="text" /></p>
+        <p>Password: <input name="password" type="password" /></p>
+        <input type="submit" name="login" value="Login" />
+    </form>
+</div>
