@@ -2,7 +2,7 @@
  *  e4xd javascript server-side - openmocha reduced to the max
  * 
  *  Copyright 2008 Chris Zumbrunn <chris@zumbrunn.com> http://zumbrunn.com
- *  version 0.6, January 15, 2008
+ *  version 0.7, January 19, 2008
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@
  * Resolves url path to child element with matching name
  */
 function getChildElement(name) {
-    return this.get(name);
+    var obj = this.get(name);
+    
+    // only resolve to the object if a renderPage method is implemented
+    if (obj && obj.renderPage)
+        return obj;
 }
 
 
@@ -32,15 +36,20 @@ function getChildElement(name) {
 function onRequest() {
     if (req.action != 'notfound') {
         
+        // sets the actually resolved action, as it is also set by notfound
+        req.data.action = req.action;
+        
         // let soft-coded actions override
         var idempotentAction = req.action +'_'+ req.method.toLowerCase();
         var action = (this.actions[idempotentAction] || this.actions[req.action]);
+        
         if (action) {
             action.call(this);
             res.stop();
         }
     }
 }
+
 
 /**
  * Resolve requests with no automatic match
@@ -61,18 +70,34 @@ function notfound_action(){
     }
     while (names.shift());
     
-    // handle idempotent requests as such
-    idempotentAction = names[0] +='_'+ req.method.toLowerCase();
+    if (!obj.render)
+        res.redirect(obj._parent.href());
     
-    // call a softcoded action
+    req.data.action = names[0] || 'main';
+    
+    // handle idempotent requests as such
+    idempotentAction = req.data.action +'_'+ req.method.toLowerCase();
+    
+    // call a softcoded idempotent action
     if (obj.actions[idempotentAction])
         obj.actions[idempotentAction].call(obj,names);
-    else if (obj.actions[names[0]])
-        obj.actions[names[0]].call(obj,names);
+        
+    // call a softcoded standard action
+    else if (obj.actions[req.data.action])
+        obj.actions[req.data.action].call(obj,names);
+    
     else {
-        output = obj.views[names[0]];
-        if (output.toXMLString())
-            res.write(output);
+        // render auto-action-enabled views 
+        if (obj.actionviews_json 
+                && obj.actionviews_json[req.data.action] 
+                && obj.access[req.data.action].check())
+            obj.renderPage();
+        
+        // if the main action was denied, redirect to the login
+        else if (req.data.action == 'main')
+            res.redirect(obj.href('login'));
+        
+        // otherwise redirect to the main action
         else 
             res.redirect(obj.href());
     }
@@ -83,7 +108,16 @@ function notfound_action(){
  * Renders an e4x object from the specified skin object
  */
 function render(skin) {
-    return new XML(this.renderSkinAsString(skin));
+    var result;
+    try {
+        result = eval(this.renderSkinAsString(skin));
+    }
+    catch(e) {}
+    
+    //if (!result)
+    //    result = new XML(this.renderSkinAsString(skin));
+    
+    return result;
 }
 
 
@@ -259,6 +293,7 @@ Mocha.prototype.__defineGetter__('access',function() {
                 return prop;
             
             var property, overrider;
+            var groups = {};
             
             property = {
                 
@@ -285,6 +320,7 @@ Mocha.prototype.__defineGetter__('access',function() {
                             && obj.access_json.hasOwnProperty(prop) 
                             && obj.access_json[prop].hasOwnProperty(tag))
                         result = obj.access_json[prop][tag];
+                    
                     // then check for overriding rights in the path chain
                     else if (obj._parent)
                         result = obj._parent.access[prop].check(id,'skip');
@@ -292,12 +328,12 @@ Mocha.prototype.__defineGetter__('access',function() {
                     if (!result && !skip) {
                     
                         // also check for an access right inherited from the prototype chain
-                        if (obj.access_json 
-                                && obj.access_json[prop] 
-                                && obj.access_json[prop][tag])
-                            result = obj.access_json[prop][tag];
+                        if (obj.__proto__.access_json 
+                                && obj.__proto__.access_json[prop] 
+                                && obj.__proto__.access_json[prop][tag])
+                            result = obj.__proto__.access_json[prop][tag];
                         
-                        // and finally for an access right inherited from group memberships
+                        // and for an access right inherited from soft-coded group memberships
                         var next = obj;
                         do {
                             if (next.hasOwnProperty('access_json')) {
@@ -318,6 +354,34 @@ Mocha.prototype.__defineGetter__('access',function() {
                             }
                         }
                         while (next = next._parent && !result);
+                        
+                        // and finally for an access right inherited from prototype group memberships
+                        if (!result) {
+                            var next = obj;
+                            do {
+                                if (next.__proto__.access_json) {
+                                    for (var group in next.__proto__.access_json) {
+                                        if (!group.startsWith(userprefix)) {
+                                            
+                                            // look for a group memberships
+                                            if (!groups[group] && next.__proto__.access[prop].check(group)) {
+                                                // and check access rights in that group
+                                                result = next.__proto__.access[group].check(id);
+                                                
+                                                // if we discover an exclude, it overrules an include
+                                                if (result == -1)
+                                                    break;
+                                            }
+                                            groups[group] = true;
+                                        }
+                                    }
+                                }
+                            }
+                            while (next = next._parent && !result);
+                        }
+                        
+                        if (!result && tag.startsWith(userprefix))
+                            result = obj.access[prop].check('registered');
                     }
                     
                     return skip ? result : (result == 1) ? true : false;
@@ -333,7 +397,7 @@ Mocha.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!obj.access_json)
+                    if (!obj.hasOwnProperty('access_json'))
                         obj.access_json = {};
                     if (!obj.access_json[prop])
                         obj.access_json[prop] = {};
@@ -352,7 +416,7 @@ Mocha.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!obj.access_json)
+                    if (!obj.hasOwnProperty('access_json'))
                         obj.access_json = {};
                     if (!obj.access_json[prop])
                         obj.access_json[prop] = {};
@@ -371,7 +435,7 @@ Mocha.prototype.__defineGetter__('access',function() {
                         id = userprefix + session.user._id;
                     if (!id)
                         return false;
-                    if (!obj.access_json
+                    if (!obj.hasOwnProperty('access_json')
                             || !obj.access_json[prop]
                             || !obj.access_json[prop][id])
                         return false;
