@@ -1,0 +1,86 @@
+This is the README file for OpenMocha 0.6
+
+*** About OpenMocha
+
+OpenMocha is an open source Javascript website application server 
+and development framework. Quick soft-coding and clean hard-coding 
+in Javascript on the client-side AND the server-side. 
+
+The goal of OpenMocha is to maximize the fun and productivity of 
+Javascript development by blending the gap between browser and server 
+based scripting.
+
+With OpenMocha, a new project can be quickly soft-coded by creating 
+custom Mocha Objects using the web browser. As the project matures, 
+these Mocha Objects can be re-factored and hard-coded in separate 
+code files. The two approaches can be mixed at any time, patching 
+hard-coded applications through soft-coding even during runtime.
+
+OpenMocha intends to stretch and scale between fast all-in-one 
+deployment and complex integration in best-of-breed environments. 
+
+*** Prerequisites and System Requirements 
+
+To run OpenMocha a Java Virtual Machine 1.4 is recommended.
+
+For FreeBSD and other operating systems with ports collection you may 
+install a JRE or JDK from the ports collection. For Windows, Linux and 
+Solaris you can get a Java runtime or development kit from 
+http://java.sun.com/j2se/downloads/. If you are on Mac OS X then you 
+already have a Java runtime that will work well with OpenMocha.
+
+While you can integrate OpenMocha with other tools such as Apache and
+MySQL, you do not have to. OpenMocha is pre-configured to be deployed 
+on its own and comes with a built-in object oriented database, a 
+built-in web server and the James mail server. 
+
+
+*** Getting started with OpenMocha
+
+For FreeBSD, Linux, Solaris, Mac OS X and other Unix flavors, start 
+OpenMocha by invoking ./start.sh from the command line. On Windows, 
+invoke start.bat instead.
+
+If the java command can not be found, make sure the JAVA_HOME 
+environment variable is set to the location of your Java installation.
+
+With OpenMocha running, you should be able to connect using your 
+browser and the URL http://127.0.0.1:8080/ or http://localhost:8080/
+
+To initialize the setup, complete the user registration form at 
+http://127.0.0.1:8080/register and follow the instructions to copy 
+the security information into the server.properties file. You may 
+then login to your new OpenMocha server via http://127.0.0.1:8080/login
+and start configuring and deploying your web applications. 
+
+In order to start exploring OpenMocha, add and edit some new pages via 
+the web browser. On the edit page you will find a Settings button that 
+will take you to the soft-coding environment. Play by creating some 
+Mocha Objects and putting server-side Javascript in the top textareas 
+and HTML markup and client-side Javascript in the bottom textareas.
+
+To explore the hard-coding environment and begin to understand the way 
+it relates to the soft-coding environment, take a look at the following 
+files inside the apps/main/Mocha and apps/main/Page directories:
+
+apps/main/Mocha/script.skin
+apps/main/Mocha/style.skin
+apps/main/Page/head.skin
+apps/main/Page/pre.skin
+apps/main/Page/main.skin
+apps/main/Page/post.skin
+apps/main/Page/helloworld.hac
+
+Note that you can see the result of the helloworld example page action 
+by accessing the URL http://127.0.0.1:8080/helloworld or by attaching 
+"helloworld" to the URL of any page that you create. 
+
+Note that you will find the helloAgain example, a custom Mocha Object,  
+inside the post.skin file and in the list of Mocha Objects on the 
+settings page.
+
+At the http://openmocha.org website, you'll find further information 
+as well as the details about the newly setup mailing list where you 
+are welcome to ask any questions.
+
+See you at openmocha.org !
