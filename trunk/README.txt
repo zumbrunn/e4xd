@@ -59,7 +59,7 @@ patch and Helma needs to be modified to do the additional file suffix
 mapping required by e4xd.
 
 http://dev.helma.org/wiki/Comparison+of+JSAdapter+and+JOMP/
-http://e4xd.googlecode.com/svn/trunk/patches/helma.txt
+http://dev.helma.org/static/files/2302/helma.txt
 
 
 *** How to get e4xd working
