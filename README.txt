@@ -47,7 +47,7 @@ and accomodating to the needs of the soft-coding environment.
 
 The jhino sub-project provides a base application scaffold for the 
 soft-coding environment. It leverages the e4xd object engine and adds 
-an additional layer of conventions that results in a basic scaffold 
+an additional layer of conventions, resulting in a basic scaffold 
 for a working base application with CRUD type functionality and 
 access control. Basically, jhino already provides a fully working 
 soft-coding environment, but requires the standard Helma development 
