@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="Helma" default="usage" basedir=".">
+<project name="e4xd" default="usage" basedir=".">
 
     <!-- =================================================================== -->
     <!-- Initializes some variables                                          -->
