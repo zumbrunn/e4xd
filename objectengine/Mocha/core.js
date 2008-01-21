@@ -117,7 +117,7 @@ function render(skin) {
     //if (!result)
     //    result = new XML(this.renderSkinAsString(skin));
     
-    return result;
+    return result || new XML();
 }
 
 
