@@ -1,4 +1,4 @@
-if (!res.data.edit)
+if (!req.data.edit)
     res.redirect(this.href());
 else if (req.data.title) {
     this.title = req.data.title.trim();
