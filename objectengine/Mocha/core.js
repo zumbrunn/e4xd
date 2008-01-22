@@ -2,7 +2,7 @@
  *  e4xd javascript server-side - openmocha reduced to the max
  * 
  *  Copyright 2008 Chris Zumbrunn <chris@zumbrunn.com> http://zumbrunn.com
- *  version 0.7, January 19, 2008
+ *  version 0.7, January 22, 2008
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -107,17 +107,15 @@ function notfound_action(){
 /**
  * Renders an e4x object from the specified skin object
  */
-function render(skin) {
-    var result;
+function render(view) {
+    var e4x;
+    var skin = this.renderSkinAsString(view);
     try {
-        result = eval(this.renderSkinAsString(skin));
+        e4x = eval(skin);
     }
     catch(e) {}
     
-    //if (!result)
-    //    result = new XML(this.renderSkinAsString(skin));
-    
-    return result || new XML();
+    return e4x || skin || new XML();
 }
 
 
