@@ -1,0 +1,13 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{this.views.title}
+{this.views.meta}
+{this.views.styles}
+{this.views.scripts}
+</head>
+<body>
+{this.views.header}
+{this.views[req.data.action]}
+{this.views.footer}
+</body>
+</html>
