@@ -1,0 +1,197 @@
+<?xml version="1.0"?>
+
+<project name="e4xd" default="usage" basedir=".">
+
+    <!-- =================================================================== -->
+    <!-- Initializes some variables                                          -->
+    <!-- =================================================================== -->
+    <target name="init">
+        <property name="Name" value="e4xd"/>
+        <property name="year" value="${year}"/>
+        <property name="version" value="0.7"/>
+        <property name="project" value="e4xd"/>
+        
+        <property name="helma.version" value="1.6.1"/>
+
+        <property name="home.dir" value=".."/>
+        <property name="build.dir" value="${home.dir}/build"/>
+
+        <property name="package.name" value="openmocha-${version}"/>
+        <property name="modules.name" value="jhino-${version}"/>
+
+        <property name="build.work" value="${home.dir}/work"/>
+        <property name="build.dist" value="${home.dir}/dist"/>
+        <property name="build.target" value="${build.work}/openmocha-${version}"/>
+        
+        <tstamp/>
+
+        <filter token="year" value="${year}"/>
+        <filter token="version" value="${version}"/>
+        <filter token="date" value="${TODAY}"/>
+    </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Help on usage                                                       -->
+    <!-- =================================================================== -->
+    <target name="help" depends="usage" />
+    <target name="usage">
+        <echo message=""/>
+        <echo message=""/>
+        <echo message="e4xd build instructions"/>
+        <echo message="-------------------------------------------------------------"/>
+        <echo message=""/>
+        <echo message=" available targets are:"/>
+        <echo message=""/>
+        <echo message=" package       --> generates openmocha distribution (zip and tar.gz)"/>
+        <echo message=" modules       --> generates jhino modules distribution (zip and tar.gz)"/>
+        <echo message=" clean         --> clean up temporary build directories and files"/>
+        <echo message=""/>
+        <echo message=" usage         --> provides help on using the build tool (default)"/>
+        <echo message=""/>
+        <echo message=" See comments inside the build.xml file for more details."/>
+        <echo message="-------------------------------------------------------------"/>
+        <echo message=""/>
+        <echo message=""/>
+    </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Creates the openmocha package distribution                          -->
+    <!-- =================================================================== -->
+    <target name="package" depends="init">
+        <mkdir dir="${build.work}"/>
+        
+        <get src="http://adele.helma.org/download/helma/${helma.version}/helma-${helma.version}.tar.gz" dest="${build.work}/helma.tar.gz" usetimestamp="true"/>
+        <gunzip src="${build.work}/helma.tar.gz"/>
+        <untar src="${build.work}/helma.tar" dest="${build.work}"/>
+        
+        <move file="${build.work}/helma-${helma.version}" tofile="${build.target}"/>
+        <move file="${build.target}/README.txt" tofile="${build.target}/AboutHelma.txt"/>
+        <move file="${build.target}/licenses/license.txt" tofile="${build.target}/licenses/helma.txt"/>
+        
+        <mkdir dir="${build.target}/modules/jhino"/>
+        <copy todir="${build.target}/modules/jhino">
+            <fileset dir="${home.dir}/jhino/"/>
+        </copy>
+        <copy todir="${build.target}/modules/objectengine">
+            <fileset dir="${home.dir}/objectengine/"/>
+        </copy>
+        
+        <mkdir dir="${build.target}/apps/exampleapp"/>
+        <copy todir="${build.target}/apps/exampleapp">
+            <fileset dir="${home.dir}/exampleapp/"/>
+        </copy>
+        
+        <copy file="${build.dir}/openmocha/AboutOpenmocha.txt" todir="${build.target}"/>
+        <copy file="${build.dir}/lib/rhino.jar" todir="${build.target}/lib" overwrite="true"/>
+        <copy file="${build.dir}/lib/helma.jar" todir="${build.target}/lib" overwrite="true"/>
+        <copy file="${build.dir}/openmocha/apps.properties" todir="${build.target}" overwrite="true"/>
+        <copy file="${home.dir}/README.txt" todir="${build.target}"/>
+        
+         <!-- zip up the whole thing -->
+        <antcall target="package-zip">
+            <param name="filename" value="${package.name}"/>
+        </antcall>
+        <antcall target="package-tgz">
+            <param name="filename" value="${package.name}"/>
+        </antcall>
+        
+        <!-- clean up -->
+        <delete dir="${build.work}"/>
+        
+   </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Creates the jhino modules distribution                          -->
+    <!-- =================================================================== -->
+    <target name="modules" depends="init">
+        <mkdir dir="${build.work}"/>
+        <mkdir dir="${build.target}"/>
+        <mkdir dir="${build.target}/modules"/>
+        <mkdir dir="${build.target}/apps"/>
+        <mkdir dir="${build.target}/lib"/>
+        
+        <mkdir dir="${build.target}/modules/jhino"/>
+        <copy todir="${build.target}/modules/jhino">
+            <fileset dir="${home.dir}/jhino/"/>
+        </copy>
+        <copy todir="${build.target}/modules/objectengine">
+            <fileset dir="${home.dir}/objectengine/"/>
+        </copy>
+        
+        <mkdir dir="${build.target}/apps/exampleapp"/>
+        <copy todir="${build.target}/apps/exampleapp">
+            <fileset dir="${home.dir}/exampleapp/"/>
+        </copy>
+        
+        <copy file="${build.dir}/lib/rhino.jar" todir="${build.target}/lib" overwrite="true"/>
+        <copy file="${build.dir}/lib/helma.jar" todir="${build.target}/lib" overwrite="true"/>
+        <copy file="${build.dir}/openmocha/apps.properties" todir="${build.target}" overwrite="true"/>
+        <copy file="${home.dir}/README.txt" todir="${build.target}"/>
+        
+         <!-- zip up the whole thing -->
+        <antcall target="package-zip">
+            <param name="filename" value="${modules.name}"/>
+        </antcall>
+        <antcall target="package-tgz">
+            <param name="filename" value="${modules.name}"/>
+        </antcall>
+        
+        <!-- clean up -->
+        <delete dir="${build.work}"/>
+        
+   </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Packages the work directory with TAR-GZIP                           -->
+    <!-- needs parameter ${filename} for final dist-file                     -->
+    <!-- =================================================================== -->
+    <target name="package-tgz" depends="init">
+        <mkdir dir="${build.dist}" />
+        <fixcrlf srcdir="${build.target}" eol="lf" eof="remove" includes="**/*.txt, **/*.properties, 
+            **/*.hac, **/*.js, **/*.skin, **/*.xml, **/*.view, **/*.action, **/*.control, 
+            **/*.macro, **/*.e4x, **/*.json, **/*.get, **/*.post, **/*.put, **/*.delete"/>
+            <tar tarfile="${build.dist}/${filename}.tar" basedir="${build.work}" excludes="**">
+            <tarfileset prefix="${filename}" dir="${build.target}" mode="755">
+                <include name="start.sh"/>
+            </tarfileset>
+            <tarfileset prefix="${filename}" dir="${build.target}">
+                <include name="**"/>
+                <exclude name="start.sh"/>
+            </tarfileset>
+        </tar>
+        <gzip zipfile="${build.dist}/${filename}.tar.gz" src="${build.dist}/${filename}.tar"/>
+        <delete file="${build.dist}/${filename}.tar"/>
+    </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Packages the work directory with ZIP                                -->
+    <!-- needs parameter ${filename} for final dist-file                     -->
+    <!-- =================================================================== -->
+    <target name="package-zip" depends="init">
+        <mkdir dir="${build.dist}" />
+        <fixcrlf srcdir="${build.work}" eol="crlf" includes="**/*.txt, **/*.properties, 
+            **/*.hac, **/*.js, **/*.skin, **/*.xml, **/*.view, **/*.action, **/*.control, 
+            **/*.macro, **/*.e4x, **/*.json, **/*.get, **/*.post, **/*.put, **/*.delete"/>
+        <zip zipfile="${build.dist}/${filename}.zip">
+            <zipfileset dir="${build.target}" prefix="${filename}">
+              <include name="**"/>
+              <exclude name="start.sh"/>
+            </zipfileset>
+        </zip>
+    </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Cleans up temporary build directories                               -->
+    <!-- =================================================================== -->
+    <target name="clean" depends="init">
+        <delete dir="${build.work}" />
+    </target>
+
+
+</project>

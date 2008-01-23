@@ -1,0 +1,158 @@
+Index: helma/framework/core/Prototype.java
+===================================================================
+--- helma/framework/core/Prototype.java (revision 8731)
++++ helma/framework/core/Prototype.java (working copy)
+@@ -186,10 +186,21 @@
+         if (!trackers.containsKey(name)) {
+             if (name.endsWith(TypeManager.templateExtension) ||
+                     name.endsWith(TypeManager.scriptExtension) ||
++                    name.endsWith(TypeManager.hacExtension) ||
+                     name.endsWith(TypeManager.actionExtension) ||
+-                    name.endsWith(TypeManager.skinExtension)) {
++                    name.endsWith(TypeManager.actionGetExtension) ||
++                    name.endsWith(TypeManager.actionPostExtension) ||
++                    name.endsWith(TypeManager.actionPutExtension) ||
++                    name.endsWith(TypeManager.actionDeleteExtension) ||
++                    name.endsWith(TypeManager.controlExtension) ||
++                    name.endsWith(TypeManager.macroExtension) ||
++                    name.endsWith(TypeManager.e4xExtension) ||
++                    name.endsWith(TypeManager.jsonExtension) ||
++                    name.endsWith(TypeManager.skinExtension) ||
++                    name.endsWith(TypeManager.viewExtension)) {
+                 updated = true;
+-                if (name.endsWith(TypeManager.skinExtension)) {
++                if (name.endsWith(TypeManager.skinExtension)
++                       || name.endsWith(TypeManager.viewExtension)) {
+                     skins.add(res);
+                 } else {
+                     if (engine != null) {
+Index: helma/framework/core/TypeManager.java
+===================================================================
+--- helma/framework/core/TypeManager.java   (revision 8731)
++++ helma/framework/core/TypeManager.java   (working copy)
+@@ -34,8 +34,18 @@
+     final static String[] standardTypes = { "User", "Global", "Root", "HopObject" };
+     final static String templateExtension = ".hsp";
+     final static String scriptExtension = ".js";
+-    final static String actionExtension = ".hac";
++    final static String hacExtension = ".hac";
++    final static String actionExtension = ".action";
++    final static String actionGetExtension = ".get";
++    final static String actionPostExtension = ".post";
++    final static String actionPutExtension = ".put";
++    final static String actionDeleteExtension = ".delete";
++    final static String controlExtension = ".control";
++    final static String macroExtension = ".macro";
++    final static String e4xExtension = ".e4x";
++    final static String jsonExtension = ".json";
+     final static String skinExtension = ".skin";
++    final static String viewExtension = ".view";
+ 
+     private Application app;
+     // map of prototypes
+Index: helma/main/Server.java
+===================================================================
+--- helma/main/Server.java  (revision 8731)
++++ helma/main/Server.java  (working copy)
+@@ -39,7 +39,7 @@
+  */
+ public class Server implements Runnable {
+     // version string
+-    public static final String version = "1.6.1 (__builddate__)";
++    public static final String version = "1.6.x (__builddate__)";
+ 
+     // static server instance
+     private static Server server;
+Index: helma/scripting/rhino/HacHspConverter.java
+===================================================================
+--- helma/scripting/rhino/HacHspConverter.java  (revision 8750)
++++ helma/scripting/rhino/HacHspConverter.java  (working copy)
+@@ -34,6 +34,42 @@
+         return composeFunction(functionName, null, action.getContent(encoding));
+     }
+ 
++    public static String convertHacGet(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_action_get";
++        return composeFunction(functionName, null, action.getContent(encoding));
++    }
++
++    public static String convertHacPost(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_action_post";
++        return composeFunction(functionName, null, action.getContent(encoding));
++    }
++
++    public static String convertHacPut(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_action_put";
++        return composeFunction(functionName, null, action.getContent(encoding));
++    }
++
++    public static String convertHacDelete(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_action_delete";
++        return composeFunction(functionName, null, action.getContent(encoding));
++    }
++
++    public static String convertMacro(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_macro";
++        return composeFunction(functionName, "params", action.getContent(encoding));
++    }
++
++    public static String convertControl(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_control";
++        return composeFunction(functionName, "view", action.getContent(encoding));
++    }
++
+     public static String convertHsp(Resource template, String encoding)
+             throws IOException {
+         String functionName = template.getBaseName().replace('.', '_');
+Index: helma/scripting/rhino/RhinoCore.java
+===================================================================
+--- helma/scripting/rhino/RhinoCore.java    (revision 8750)
++++ helma/scripting/rhino/RhinoCore.java    (working copy)
+@@ -804,9 +804,27 @@
+                         new InputStreamReader(code.getInputStream()) :
+                         new InputStreamReader(code.getInputStream(), encoding);
+                 cx.evaluateReader(op, reader, sourceName, 1, null);
+-            } else if (sourceName.endsWith(".hac")) {
++            } else if (sourceName.endsWith(".hac") || sourceName.endsWith(".action")) {
+                 reader = new StringReader(HacHspConverter.convertHac(code, encoding));
+                 cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".get")) {
++                reader = new StringReader(HacHspConverter.convertHacGet(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".post")) {
++                reader = new StringReader(HacHspConverter.convertHacPost(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".put")) {
++                reader = new StringReader(HacHspConverter.convertHacPut(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".delete")) {
++                reader = new StringReader(HacHspConverter.convertHacDelete(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".macro")) {
++                reader = new StringReader(HacHspConverter.convertMacro(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".control")) {
++                reader = new StringReader(HacHspConverter.convertControl(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
+             } else if (sourceName.endsWith(".hsp")) {
+                 reader = new StringReader(HacHspConverter.convertHsp(code, encoding));
+                 cx.evaluateReader(op, reader, sourceName, 0, null);
+@@ -812,6 +830,12 @@
+                 cx.evaluateReader(op, reader, sourceName, 0, null);
+                 reader = new StringReader(HacHspConverter.convertHspAsString(code, encoding));
+                 cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".e4x")) {
++                reader = new StringReader("this."+code.getBaseName().replace('.', '_') + "_e4x = "+ code.getContent(encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".json")) {
++                reader = new StringReader("this."+code.getBaseName().replace('.', '_') + "_json = "+ code.getContent(encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
+             }
+ 
+         } catch (Exception e) {
