@@ -18,9 +18,11 @@ if (this.access.sysop.check()) {
 
 if (session.user)
     toolbar.a += <a class="button" href={this.href('logout')}>Logout</a>;
-else {
+else if (app.getRegisteredUsers().length) {
     toolbar.a += <a class="button" href={this.href('login')}>Login</a>;
     toolbar.a += <a class="button" href={this.href('register')}>Register</a>;
 }
+else
+    toolbar.a += <a class="button" href={this.href('register')}>Setup Admin Account</a>;
 
 return content;
