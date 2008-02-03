@@ -3,6 +3,7 @@
 {this.views.title}
 {this.views.meta}
 {this.views.styles}
+{this.views.fetchlets}
 {this.views.scripts}
 </head>
 <body>

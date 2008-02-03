@@ -34,11 +34,17 @@ function getChildElement(name) {
  * Resolves requests to soft-coded actions before hard-coded ones are invoked
  */
 function onRequest() {
+
+    // workaround for a bug that causes onInit not to be called when
+    // the root objects is re-fetched from the database
+    // http://helma.org/bugs/show_bug.cgi?id=598
+    if (!root.hasOwnProperty('access_json'))
+        root.onInit();
+
+    // sets the actually resolved action, as it is also set by notfound
+    req.data.action = req.action;
+    
     if (req.action != 'notfound') {
-        
-        // sets the actually resolved action, as it is also set by notfound
-        req.data.action = req.action;
-        
         // let soft-coded actions override
         var idempotentAction = req.action +'_'+ req.method.toLowerCase();
         var action = (this.actions[idempotentAction] || this.actions[req.action]);
@@ -105,17 +111,25 @@ function notfound_action(){
 
 
 /**
- * Renders an e4x object from the specified skin object
+ * Renders an object for sending to the client
  */
 function render(view) {
+    
+    // render functions for client-side use
+    if (view instanceof Function)
+        return this.renderSkinAsString(createSkin(view.toSource()));
+    
+    // attempt to render skin as xml object
     var e4x;
     var skin = this.renderSkinAsString(view);
     try {
         e4x = eval(skin);
     }
-    catch(e) {}
+    catch(e) {
+        e4x = new XML(skin);
+    }
     
-    return e4x || skin || new XML();
+    return e4x;
 }
 
 
@@ -133,6 +147,97 @@ Mocha.prototype.__defineGetter__('path',function() {
     
     return breadcrumbs;
 });
+
+
+/**
+ * Returns the collection of fetchlets from the prototype chain
+ */
+function collectFetchlets() {
+    
+    // collect fetchlets from prototype chain
+    var protoChain = this;
+    var fetchletCollection = [];
+    do {
+        if (protoChain._fetchlets)
+            for (var fetchlet in protoChain._fetchlets)
+                if (!fetchletCollection.contains(protoChain._fetchlets[fetchlet]))
+                    fetchletCollection.push(protoChain._fetchlets[fetchlet]);
+    } 
+    while ((protoChain = protoChain.__proto__) != Object.prototype);
+    
+    // collect fetchlets from the path chain
+    var pathCollection = [];
+    var pathChain = this;
+    do {
+        for (var prop in pathChain)
+            if (prop.endsWith('_fetchlet')) {
+                var fetchlet = prop.slice(0,-9);
+                if (fetchletCollection.contains(fetchlet))
+                    fetchletCollection.splice(fetchletCollection.indexOf(fetchlet),1);
+                pathCollection.push(fetchlet);
+            }
+    }
+    while (pathChain = pathChain._parent);
+    
+    // combine fetchlet collections from prototype and path chain
+    fetchletCollection  = fetchletCollection.reverse().concat(pathCollection.reverse());
+    
+    return fetchletCollection;
+}
+
+
+/**
+ * Builds a collection of fetchlets for injection on the client-side
+ */
+function buildFetchlets() {
+    var fetchlets = '';
+    var fetchletCollection = this.collectFetchlets();
+    
+    var fetch = 'fetcher({fetchlet:"\'+fetchid+\'"})';
+    
+    // define client-side fetchlet functions
+    for (var fetchletName in fetchletCollection) {
+        
+        // handle hierarchical fetchlets
+        if (fetchletCollection[fetchletName].contains('_')) {
+            var objtree = fetchletCollection[fetchletName].split('_');
+            var prop = objtree.pop();
+            var base = objtree.shift();
+            
+            // first make sure the object tree exists
+            fetchlets += 'if (!window.'+ base +') var '+ base +' = {};\n';
+            for (var obj in objtree) {
+                fetchlets += 'if (!'+ base +'.'+ objtree[obj] +') '+ base +'.'+ objtree[obj] +' = {};\n';
+                base = base + '.'+ objtree[obj];
+            }
+            
+            // define hierarchical fetchlet
+            fetchlets += base +'.'+ prop +' = '
+                + 'function(params){fetcher("'+ base +'.'+ prop +'", params)};\n';
+        }
+        
+        // define plain, non-hierarchical fetchlet
+        else
+            fetchlets += 'var '+ fetchletCollection[fetchletName] +' = '
+                + 'function(params){fetcher("'+ fetchletCollection[fetchletName] +'", params)};\n';
+    }
+    
+    var fetcher = function(fetchid,params) {
+            
+            // prepare params
+            params = params ? '&params='+ encodeURIComponent(params) : '';
+            
+            var element = document.createElement('script');
+            element.setAttribute('src', '<% this.href %>fetch?fetchlet='+fetchid
+                +'&r'+Math.random().toString().slice(2)+'=0'+params);
+            document.getElementsByTagName("head")[0].appendChild(element);
+    }
+    
+    if (fetchlets)
+        fetchlets = 'var fetcher = '+ this.render(fetcher) +';\n'+ fetchlets;
+    
+    return fetchlets;
+}
 
 
 /**
@@ -268,6 +373,12 @@ Mocha.prototype.__defineGetter__('actions',Mocha.resolver('actions'))
  * Handles macros object, resolving to appropriate getters and setters
  */
 Mocha.prototype.__defineGetter__('macros',Mocha.resolver('macros'))
+
+
+/**
+ * Handles fetchlets object, resolving to appropriate getters and setters
+ */
+Mocha.prototype.__defineGetter__('fetchlets',Mocha.resolver('fetchlets'))
 
 
 /**
@@ -468,8 +579,9 @@ function onPersist(){
             || i.endsWith('_action_post')
             || i.endsWith('_action_put')
             || i.endsWith('_action_delete')
-            || i.endsWith('_control')
-            || i.endsWith('_macro'))
+            || i.endsWith('_macro')
+            || i.endsWith('_fetchlet')
+            || i.endsWith('_control'))
             this[i+'_'] = this[i].toSource()
                 .slice(this[i].toSource().indexOf('{')+1,
                     this[i].toSource().lastIndexOf('}'))
@@ -491,8 +603,9 @@ function onInit() {
             || i.endsWith('_action_post_')
             || i.endsWith('_action_put_')
             || i.endsWith('_action_delete_')
-            || i.endsWith('_control_')
-            || i.endsWith('_macro_'))
+            || i.endsWith('_macro_')
+            || i.endsWith('_fetchlet_')
+            || i.endsWith('_control_'))
             this[i.slice(0,-1)] = new Function(this[i]);
     }
 }
