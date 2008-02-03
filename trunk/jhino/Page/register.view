@@ -1,5 +1,5 @@
 <div class="main">
-    <h2>Register</h2>
+    <h2>{app.getRegisteredUsers().length ? 'Regsiter' : 'Setup'}</h2>
     <% response.message %>
     <form method="post">
         <p>Username: <input name="username" type="text" value="<% request.username %>" /></p>
