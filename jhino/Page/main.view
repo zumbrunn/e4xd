@@ -1,5 +1,0 @@
-<div class="main">
-    <h2>{this.title || req.data.http_host}</h2>
-    {this.views.content}
-    {this.views.list}
-</div>

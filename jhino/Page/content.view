@@ -1,4 +1,0 @@
-<div class="content">
-    <p>{this.content || ''}</p>
-    <div id="contenttools" class="tools"/>
-</div>
