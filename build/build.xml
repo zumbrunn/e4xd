@@ -62,7 +62,8 @@
     <target name="package" depends="init">
         <mkdir dir="${build.work}"/>
         
-        <get src="http://adele.helma.org/download/helma/${helma.version}/helma-${helma.version}.tar.gz" dest="${build.work}/helma.tar.gz" usetimestamp="true"/>
+        <get src="http://adele.helma.org/download/helma/${helma.version}/helma-${helma.version}.tar.gz" dest="${build.dir}/helma.tar.gz" usetimestamp="true"/>
+        <copy file="${build.dir}/helma.tar.gz" todir="${build.work}"/>
         <gunzip src="${build.work}/helma.tar.gz"/>
         <untar src="${build.work}/helma.tar" dest="${build.work}"/>
         
