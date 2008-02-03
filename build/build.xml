@@ -8,7 +8,7 @@
     <target name="init">
         <property name="Name" value="e4xd"/>
         <property name="year" value="${year}"/>
-        <property name="version" value="0.7"/>
+        <property name="version" value="0.8"/>
         <property name="project" value="e4xd"/>
         
         <property name="helma.version" value="1.6.1"/>
