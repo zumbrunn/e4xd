@@ -122,12 +122,16 @@ function render(view) {
     // attempt to render skin as xml object
     var e4x;
     var skin = this.renderSkinAsString(view);
-    try {
-        e4x = eval(skin);
-    }
-    catch(e) {
-        e4x = new XML(skin);
-    }
+    
+    if (skin)
+        try {
+            e4x = eval(skin);
+        }
+        catch(e) {
+            e4x = new XML(skin);
+        }
+    else
+        e4x = new XML();
     
     return e4x;
 }
