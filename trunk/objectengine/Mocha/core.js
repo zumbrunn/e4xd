@@ -138,6 +138,18 @@ function render(view) {
 
 
 /**
+ * Renders a script for sending to the client
+ */
+function sendScript(script) {
+    var value = this.renderSkinAsString(script);
+    if (!value)
+        value = script;
+    value = value.replace('<script>','').replace('</script>','');
+    res.write(value);
+}
+
+
+/**
  * Provides the an array of the path breadcrumbs from
  * the this Mocha object up to the root object.
  */
