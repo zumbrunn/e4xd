@@ -2,7 +2,9 @@ var list = <ul class="list"/>;
 
 for (var item in this.list()) {
     var next = this.list()[item];
-    list += <li><a href={next.href()}>{next.name}</a></li>;
+    list.appendChild(
+        <li><a href={next.href()}>{next.name}</a></li>
+    );
 }
 
-return list;
+return list.*.length() ? list : new XML();
