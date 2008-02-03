@@ -52,7 +52,7 @@ h2 {
     background: #ccc;
 }
 
-.breadcrumb {
+.breadcrumbs {
     font-size: 13px; 
     padding-right: 10px;
 }

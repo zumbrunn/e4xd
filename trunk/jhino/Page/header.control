@@ -1,13 +1,14 @@
 var header = this.render(view);
+var breadcrumbs = <div class="breadcrumbs"/>
 
 var thispath = this.path.reverse();
 thispath.pop();
 for (var next in thispath) {
     var item = thispath[next];
     var itemtitle = item.title || item.name || 'Home';
-    header += <span class="breadcrumb">
-            <a href={item.href()}> > {itemtitle} </a>
-        </span>;
+    breadcrumbs.appendChild(
+        <a href={item.href()}> > {itemtitle} </a>
+    );
 }
 
-return header;
+return breadcrumbs.*.length() ? header += breadcrumbs : header;
