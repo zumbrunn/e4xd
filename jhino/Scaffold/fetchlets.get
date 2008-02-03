@@ -1,0 +1,2 @@
+res.contentType='text/javascript';
+res.write(this.buildFetchlets());
