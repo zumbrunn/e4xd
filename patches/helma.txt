@@ -2,7 +2,7 @@ Index: helma/framework/core/Prototype.java
 ===================================================================
 --- helma/framework/core/Prototype.java (revision 8731)
 +++ helma/framework/core/Prototype.java (working copy)
-@@ -186,10 +186,21 @@
+@@ -186,10 +186,22 @@
          if (!trackers.containsKey(name)) {
              if (name.endsWith(TypeManager.templateExtension) ||
                      name.endsWith(TypeManager.scriptExtension) ||
@@ -15,6 +15,7 @@ Index: helma/framework/core/Prototype.java
 +                    name.endsWith(TypeManager.actionDeleteExtension) ||
 +                    name.endsWith(TypeManager.controlExtension) ||
 +                    name.endsWith(TypeManager.macroExtension) ||
++                    name.endsWith(TypeManager.fetchletExtension) ||
 +                    name.endsWith(TypeManager.e4xExtension) ||
 +                    name.endsWith(TypeManager.jsonExtension) ||
 +                    name.endsWith(TypeManager.skinExtension) ||
@@ -30,7 +31,7 @@ Index: helma/framework/core/TypeManager.java
 ===================================================================
 --- helma/framework/core/TypeManager.java   (revision 8731)
 +++ helma/framework/core/TypeManager.java   (working copy)
-@@ -34,8 +34,18 @@
+@@ -34,8 +34,19 @@
      final static String[] standardTypes = { "User", "Global", "Root", "HopObject" };
      final static String templateExtension = ".hsp";
      final static String scriptExtension = ".js";
@@ -43,6 +44,7 @@ Index: helma/framework/core/TypeManager.java
 +    final static String actionDeleteExtension = ".delete";
 +    final static String controlExtension = ".control";
 +    final static String macroExtension = ".macro";
++    final static String fetchletExtension = ".fetchlet";
 +    final static String e4xExtension = ".e4x";
 +    final static String jsonExtension = ".json";
      final static String skinExtension = ".skin";
@@ -59,7 +61,7 @@ Index: helma/main/Server.java
  public class Server implements Runnable {
      // version string
 -    public static final String version = "1.6.1 (__builddate__)";
-+    public static final String version = "1.6.x (__builddate__)";
++    public static final String version = "1.6.x (patched e4xd build) (__builddate__)";
  
      // static server instance
      private static Server server;
@@ -67,7 +69,7 @@ Index: helma/scripting/rhino/HacHspConverter.java
 ===================================================================
 --- helma/scripting/rhino/HacHspConverter.java  (revision 8750)
 +++ helma/scripting/rhino/HacHspConverter.java  (working copy)
-@@ -34,6 +34,42 @@
+@@ -34,6 +34,48 @@
          return composeFunction(functionName, null, action.getContent(encoding));
      }
  
@@ -101,6 +103,12 @@ Index: helma/scripting/rhino/HacHspConverter.java
 +        return composeFunction(functionName, "params", action.getContent(encoding));
 +    }
 +
++    public static String convertFetchlet(Resource action, String encoding)
++            throws IOException {
++        String functionName = action.getBaseName().replace('.', '_') + "_fetchlet";
++        return composeFunction(functionName, "params", action.getContent(encoding));
++    }
++
 +    public static String convertControl(Resource action, String encoding)
 +            throws IOException {
 +        String functionName = action.getBaseName().replace('.', '_') + "_control";
@@ -112,9 +120,25 @@ Index: helma/scripting/rhino/HacHspConverter.java
          String functionName = template.getBaseName().replace('.', '_');
 Index: helma/scripting/rhino/RhinoCore.java
 ===================================================================
---- helma/scripting/rhino/RhinoCore.java    (revision 8750)
+--- helma/scripting/rhino/RhinoCore.java    (revision 8764)
 +++ helma/scripting/rhino/RhinoCore.java    (working copy)
-@@ -804,9 +804,27 @@
+@@ -266,6 +266,15 @@
+ 
+         contextFactory.call(new ContextAction() {
+             public Object run(Context cx) {
++                
++                // clear fetchlet index
++                try {
++                    cx.evaluateReader(type.objProto, new StringReader("this._fetchlets = [];"), null, 0, null);
++                } catch (Exception e) {
++                    ScriptingException sx = new ScriptingException(e.getMessage(), e);
++                    app.logError("Error clearing fetchlet index for " + type.objProto, sx);
++                }
++                
+                 // loop through the prototype's code elements and evaluate them
+                 Iterator code = prototype.getCodeResources();
+                 while (code.hasNext()) {
+@@ -804,9 +813,33 @@
                          new InputStreamReader(code.getInputStream()) :
                          new InputStreamReader(code.getInputStream(), encoding);
                  cx.evaluateReader(op, reader, sourceName, 1, null);
@@ -137,21 +161,29 @@ Index: helma/scripting/rhino/RhinoCore.java
 +            } else if (sourceName.endsWith(".macro")) {
 +                reader = new StringReader(HacHspConverter.convertMacro(code, encoding));
 +                cx.evaluateReader(op, reader, sourceName, 0, null);
++            } else if (sourceName.endsWith(".fetchlet")) {
++                reader = new StringReader(
++                    "if (!this.hasOwnProperty('_fetchlets')) this._fetchlets = [];"
++                    + "this._fetchlets.push('" + code.getBaseName().replace('.', '_') + "');"
++                    + HacHspConverter.convertFetchlet(code, encoding));
++                cx.evaluateReader(op, reader, sourceName, 0, null);
 +            } else if (sourceName.endsWith(".control")) {
 +                reader = new StringReader(HacHspConverter.convertControl(code, encoding));
 +                cx.evaluateReader(op, reader, sourceName, 0, null);
              } else if (sourceName.endsWith(".hsp")) {
                  reader = new StringReader(HacHspConverter.convertHsp(code, encoding));
                  cx.evaluateReader(op, reader, sourceName, 0, null);
-@@ -812,6 +830,12 @@
+@@ -812,6 +845,14 @@
                  cx.evaluateReader(op, reader, sourceName, 0, null);
                  reader = new StringReader(HacHspConverter.convertHspAsString(code, encoding));
                  cx.evaluateReader(op, reader, sourceName, 0, null);
 +            } else if (sourceName.endsWith(".e4x")) {
-+                reader = new StringReader("this."+code.getBaseName().replace('.', '_') + "_e4x = "+ code.getContent(encoding));
++                reader = new StringReader("this."
++                    + code.getBaseName().replace('.', '_') + "_e4x = "+ code.getContent(encoding));
 +                cx.evaluateReader(op, reader, sourceName, 0, null);
 +            } else if (sourceName.endsWith(".json")) {
-+                reader = new StringReader("this."+code.getBaseName().replace('.', '_') + "_json = "+ code.getContent(encoding));
++                reader = new StringReader("this."
++                    + code.getBaseName().replace('.', '_') + "_json = "+ code.getContent(encoding));
 +                cx.evaluateReader(op, reader, sourceName, 0, null);
              }
  
