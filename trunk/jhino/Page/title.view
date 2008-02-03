@@ -1,1 +1,0 @@
-<title>{req.data.http_host +' - '+ (this.title || '/')}</title>

@@ -1,8 +1,0 @@
-
-// go the bootstrap route
-if (!app.getRegisteredUsers().length || !getProperty('adminAccess'))
-    res.redirect(this.href('register'));
-
-// or go forward with the default behavior
-else
-    this.renderPage();

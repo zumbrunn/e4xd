@@ -1,6 +1,0 @@
-var fetchlets = new XML();
-
-if (this.collectFetchlets())
-    fetchlets += <script class="fetchlets" src={this.href('fetchlets')} />;
-
-return fetchlets;

@@ -1,2 +1,0 @@
-session.logout();
-res.redirect(this.href());

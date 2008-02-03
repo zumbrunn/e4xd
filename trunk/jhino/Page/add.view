@@ -1,9 +1,0 @@
-<div class="main">
-    <h2>Create Page</h2>
-    <form method="post">
-        <p>Title: <input name="name" type="text" size="55" /></p>
-        <p><textarea name="content" cols="80" rows="20"/></p>
-        <input type="submit" name="add" value="Add" />
-        <input type="submit" name="cancel" value="Cancel" />
-    </form>
-</div>
