@@ -1,0 +1,4 @@
+if (session.user) {
+    res.data.username = session.user.name;
+    this.sendScript('hello.js');
+}

@@ -1,0 +1,22 @@
+if (!req.data.add)
+    res.redirect(this.href());
+else if (req.data.name && !this.get(req.data.name)) {
+    var proto = this.__prototype__ == 'Root' ? 'Page' : this.__prototype__;
+    var newObj = new global[proto]();
+    newObj.name = req.data.name
+                    .trim()
+                    .replace(/\?/g,'')
+                    .replace(/\//g,'')
+                    .replace(/'/g,'')
+                    .replace(/ /g,'');//.toURL();
+    newObj.content = (req.data.content) ? req.data.content : '';
+    newObj.link = (req.data.link) ? req.data.link : '';
+    newObj.title = req.data.name.trim();
+    newObj.modified = new Date();
+    newObj.created = new Date();
+    this.add(newObj);
+    res.redirect(newObj.href());
+}
+else {
+    res.redirect(req.action);
+}

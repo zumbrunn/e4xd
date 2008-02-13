@@ -1,0 +1,1 @@
+res.write(this.views['styles.css']);

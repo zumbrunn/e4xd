@@ -1,0 +1,9 @@
+<div class="main">
+    <h2>Edit Page</h2>
+    <form method="post">
+        <p>Title: <input name="title" type="text" size="55" value={this.title||''} /></p>
+        <p><textarea name="content" cols="80" rows="20">{this.content||''}</textarea></p>
+        <input type="submit" name="edit" value="Save" />
+        <input type="submit" name="cancel" value="Cancel" />
+    </form>
+</div>

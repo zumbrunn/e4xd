@@ -1,0 +1,5 @@
+if (this.collectFetchlets().contains(req.data.fetchlet)){
+    res.contentType='text/javascript';
+    var params = req.data.params ? req.data.params : 'nope';
+    this.fetchlets[req.data.fetchlet].call(this,params);
+}
