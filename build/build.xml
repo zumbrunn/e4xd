@@ -18,6 +18,7 @@
 
         <property name="package.name" value="openmocha-${version}"/>
         <property name="modules.name" value="jhino-${version}"/>
+        <property name="xmlbean.name" value="xmlbean-ext-jars"/>
 
         <property name="build.work" value="${home.dir}/work"/>
         <property name="build.dist" value="${home.dir}/dist"/>
@@ -45,6 +46,8 @@
         <echo message=""/>
         <echo message=" package       --> generates openmocha distribution (zip and tar.gz)"/>
         <echo message=" modules       --> generates jhino modules distribution (zip and tar.gz)"/>
+        <echo message=" xmlbean       --> generates the additional distribution with xmlbean"/>
+        <echo message="                   jar files for E4X support with Java 1.4.2 (tar.gz)"/>
         <echo message=" clean         --> clean up temporary build directories and files"/>
         <echo message=""/>
         <echo message=" usage         --> provides help on using the build tool (default)"/>
@@ -90,7 +93,7 @@
         <copy file="${build.dir}/openmocha/apps.properties" todir="${build.target}" overwrite="true"/>
         <copy file="${home.dir}/README.txt" todir="${build.target}"/>
         
-         <!-- zip up the whole thing -->
+        <!-- zip up the whole thing -->
         <antcall target="package-zip">
             <param name="filename" value="${package.name}"/>
         </antcall>
@@ -132,12 +135,37 @@
         <copy file="${build.dir}/openmocha/apps.properties" todir="${build.target}" overwrite="true"/>
         <copy file="${home.dir}/README.txt" todir="${build.target}"/>
         
-         <!-- zip up the whole thing -->
+        <!-- zip up the whole thing -->
         <antcall target="package-zip">
             <param name="filename" value="${modules.name}"/>
         </antcall>
         <antcall target="package-tgz">
             <param name="filename" value="${modules.name}"/>
+        </antcall>
+        
+        <!-- clean up -->
+        <delete dir="${build.work}"/>
+        
+   </target>
+
+
+    <!-- =================================================================== -->
+    <!-- Creates the xmlbean distribution                                    -->
+    <!-- =================================================================== -->
+    <target name="xmlbean" depends="init">
+        <mkdir dir="${build.work}"/>
+        <mkdir dir="${build.target}"/>
+        
+        <copy file="${build.dir}/xmlbean/jsr173_1.0_api.jar" todir="${build.target}" overwrite="true"/>
+        <copy file="${build.dir}/xmlbean/xbean.jar" todir="${build.target}" overwrite="true"/>
+        <copy file="${build.dir}/xmlbean/README.txt" todir="${build.target}" overwrite="true"/>
+        
+        <!-- zip up the whole thing -->
+        <antcall target="package-zip">
+            <param name="filename" value="${xmlbean.name}"/>
+        </antcall>
+        <antcall target="package-tgz">
+            <param name="filename" value="${xmlbean.name}"/>
         </antcall>
         
         <!-- clean up -->
