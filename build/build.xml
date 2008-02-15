@@ -90,6 +90,8 @@
         <copy file="${build.dir}/openmocha/AboutOpenmocha.txt" todir="${build.target}"/>
         <copy file="${build.dir}/lib/rhino.jar" todir="${build.target}/lib" overwrite="true"/>
         <copy file="${build.dir}/lib/helma.jar" todir="${build.target}/lib" overwrite="true"/>
+        <copy file="${build.dir}/xmlbean/jsr173_1.0_api.jar" todir="${build.target}/lib/ext" overwrite="true"/>
+        <copy file="${build.dir}/xmlbean/xbean.jar" todir="${build.target}/lib/ext" overwrite="true"/>
         <copy file="${build.dir}/openmocha/apps.properties" todir="${build.target}" overwrite="true"/>
         <copy file="${home.dir}/README.txt" todir="${build.target}"/>
         
