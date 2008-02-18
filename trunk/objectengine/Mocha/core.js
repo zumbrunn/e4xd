@@ -61,6 +61,9 @@ function onRequest() {
  * Resolve requests with no automatic match
  */
 function notfound_action(){
+    
+    res.status = 200;
+    
     var action, output, name;
     
     // setup path names to look through
