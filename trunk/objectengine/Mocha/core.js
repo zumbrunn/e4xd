@@ -92,21 +92,19 @@ function notfound_action(){
     else if (obj.actions[req.data.action])
         obj.actions[req.data.action].call(obj,names);
     
-    else {
-        // render auto-action-enabled views 
-        if (obj.actionviews_json 
-                && obj.actionviews_json[req.data.action] 
-                && obj.access[req.data.action].check())
-            obj.renderPage();
-        
-        // if the main action was denied, redirect to the login
-        else if (req.data.action == 'main')
-            res.redirect(obj.href('login'));
-        
-        // otherwise redirect to the main action
-        else 
-            res.redirect(obj.href());
-    }
+    // render auto-action-enabled views 
+    else if (obj.actionviews_json 
+            && obj.actionviews_json[req.data.action] 
+            && obj.access[req.data.action].check())
+        obj.renderPage();
+    
+    // if the main action was denied, redirect to the login
+    else if (req.data.action == 'main')
+        res.redirect(obj.href('login'));
+    
+    // otherwise redirect to the main action
+    else 
+        res.redirect(obj.href());
 }
 
 
