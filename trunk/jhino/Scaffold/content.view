@@ -1,4 +1,4 @@
 <div class="content">
-    <p>{this.content || ''}</p>
+    {this.content.toE4X()}
     <div id="contenttools" class="tools"/>
 </div>

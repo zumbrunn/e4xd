@@ -19,6 +19,18 @@
 
 
 /**
+ * Returns an E4X XMLList object from this string
+ * 
+ * Any entities and other ampersands are escaped
+ * 
+ * @return XMLList
+ */
+String.prototype.toE4X = function() {
+    return new XMLList(this.replace(/&/g,";;ampersand;;"))
+}
+
+
+/**
  * Resolves url path to child element with matching name
  */
 function getChildElement(name) {
