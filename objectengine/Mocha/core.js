@@ -26,7 +26,24 @@
  * @return XMLList
  */
 String.prototype.toE4X = function() {
-    return new XMLList(this.replace(/&/g,";;ampersand;;"))
+    return new XMLList(this.replace(/&/g,";;ampersand;;"));
+}
+
+
+/**
+ * Returns an string rendered from the provided E4X object
+ * 
+ * Any entities and other ampersands are unescaped
+ * 
+ * @param {XML} xml the XML or XMLList object to convert
+ * @return String
+ */
+String.fromE4X = function(xml) {
+    var string = xml.toXMLString()
+        .replace(/;;ampersand;;/g,'&')
+        .replace(/<textarea(.*)\/>/g,'<textarea$1></textarea>')
+        .replace(/<script(.*)\/>/g,'<script$1></script>')
+    return string;
 }
 
 
