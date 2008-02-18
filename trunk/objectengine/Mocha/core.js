@@ -126,7 +126,11 @@ function render(view) {
             e4x = eval(skin);
         }
         catch(e) {
-            e4x = new XML(skin);
+            e4x = new XML('<span class="failedView">'+ skin 
+                + '<script>\
+                    if (window.console) \
+                        console.log(\'Failed view '+view+': '+e+'\')\
+                   </script></span>');
         }
     else
         e4x = new XML();
