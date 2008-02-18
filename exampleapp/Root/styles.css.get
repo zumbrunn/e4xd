@@ -1,1 +1,2 @@
-res.write(this.views['styles.css']);
+res.contentType='text/css';
+res.write(this.renderSkinAsString('styles.css'));
