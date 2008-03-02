@@ -1,2 +1,4 @@
-res.contentType='text/javascript';
-res.write(this.buildFetchlets());
+if (this.access.read) {
+    res.contentType='text/javascript';
+    res.write(this.buildFetchlets());
+}
