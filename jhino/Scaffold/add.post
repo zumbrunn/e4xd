@@ -1,4 +1,4 @@
-if (!req.data.add)
+if (!req.data.add || !this.access.add)
     res.redirect(this.href());
 else if (req.data.name && !this.get(req.data.name)) {
     var proto = this.__prototype__ == 'Root' ? 'Page' : this.__prototype__;

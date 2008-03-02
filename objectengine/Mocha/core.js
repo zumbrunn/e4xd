@@ -168,176 +168,171 @@ Mocha.prototype.__defineGetter__('access',function() {
     // setup closure for current obj instance
     var obj = this;
     var userprefix = 'user_';
-
-    // define metaproperty handlers
-    var resolver = {__metaobject__:{
+    var groups = {};
     
-        // define getter for metaproperties
-        get : function(thisObj,prop) {
-            if (thisObj[prop])
-                return thisObj[prop];
-            
-            if (!prop)
-                return prop;
-            
-            var property, overrider;
-            var groups = {};
-            
-            property = {
+    // define metaproperty handlers
+    var resolver = {
+        __metaobject__:{
+        
+            // define getter for metaproperties
+            get : function(thisObj,property) {
+                if (thisObj[property])
+                    return thisObj[property];
                 
-                /**
-                 * Returns true if the user or group has this access right
-                 */
-                check : function(id,skip){
-                    var result = 0;
-                    var tag = id;
-                    
-                    // adds the user id prefix if the lookup is for a specific user
-                    if (id instanceof User)
-                        tag = userprefix + id._id;
-                    // adds the user id prefix if the lookup is not for a group
-                    else if (!id && session.user && session.user._id)
-                        tag = userprefix + session.user._id;                        
-                    else if (!id)
-                        tag = 'unknown';
-                    
-                    // check for a specific access right for this user or group
-                    
-                    // first check for an overriding access right on the current obj
-                    if (obj.hasOwnProperty('access_json') 
-                            && obj.access_json.hasOwnProperty(prop) 
-                            && obj.access_json[prop].hasOwnProperty(tag))
-                        result = obj.access_json[prop][tag];
-                    
-                    // then check for overriding rights in the path chain
-                    else if (obj._parent)
-                        result = obj._parent.access[prop].check(id,'skip');
-                    
-                    if (!result && !skip) {
-                    
-                        // also check for an access right inherited from the prototype chain
-                        if (obj.__proto__.access_json 
-                                && obj.__proto__.access_json[prop] 
-                                && obj.__proto__.access_json[prop][tag])
-                            result = obj.__proto__.access_json[prop][tag];
-                        
-                        // and for an access right inherited from soft-coded group memberships
-                        var next = obj;
-                        do {
-                            if (next.hasOwnProperty('access_json')) {
-                                for (var group in next.access_json) {
-                                    if (!group.startsWith(userprefix)) {
-                                        
-                                        // look for a group memberships
-                                        if (next.access[prop].check(group,'skip')) {
-                                            // and check access rights in that group
-                                            result = next.access[group].check(id);
-                                            
-                                            // if we discover an exclude, it overrules an include
-                                            if (result == -1)
-                                                break;
-                                        }
-                                    }
+                if (!property)
+                    return property;
+                
+                return thisObj.check(property);
+            }
+        },
+        
+        /**
+         * Returns true if the user or group has this access right
+         */
+        check : function(prop,id,skip){
+            var result = 0;
+            var tag = id;
+            
+            // adds the user id prefix if the lookup is for a specific user
+            if (id instanceof User)
+                tag = userprefix + id._id;
+            // adds the user id prefix if the lookup is not for a group
+            else if (!id && session.user && session.user._id)
+                tag = userprefix + session.user._id;                        
+            else if (!id)
+                tag = 'unknown';
+            
+            // check for a specific access right for this user or group
+            
+            // first check for an overriding access right on the current obj
+            if (obj.hasOwnProperty('access_json') 
+                    && obj.access_json.hasOwnProperty(prop) 
+                    && obj.access_json[prop].hasOwnProperty(tag))
+                result = obj.access_json[prop][tag];
+            
+            // then check for overriding rights in the path chain
+            else if (obj._parent)
+                result = obj._parent.access.check(prop,id,'skip');
+            
+            if (!result && !skip) {
+            
+                // also check for an access right inherited from the prototype chain
+                if (obj.__proto__.access_json 
+                        && obj.__proto__.access_json[prop] 
+                        && obj.__proto__.access_json[prop][tag])
+                    result = obj.__proto__.access_json[prop][tag];
+                
+                // and for an access right inherited from soft-coded group memberships
+                var next = obj;
+                do {
+                    if (next.hasOwnProperty('access_json')) {
+                        for (var group in next.access_json) {
+                            if (!group.startsWith(userprefix)) {
+                                
+                                // look for a group memberships
+                                if (next.access.check(prop,group,'skip')) {
+                                    // and check access rights in that group
+                                    result = next.access.check(group,id);
+                                    
+                                    // if we discover an exclude, it overrules an include
+                                    if (result == -1)
+                                        break;
                                 }
                             }
                         }
-                        while (next = next._parent && !result);
-                        
-                        // and finally for an access right inherited from prototype group memberships
-                        if (!result) {
-                            var next = obj;
-                            do {
-                                if (next.__proto__.access_json) {
-                                    for (var group in next.__proto__.access_json) {
-                                        if (!group.startsWith(userprefix)) {
-                                            
-                                            // look for a group memberships
-                                            if (!groups[group] && next.__proto__.access[prop].check(group)) {
-                                                // and check access rights in that group
-                                                result = next.__proto__.access[group].check(id);
-                                                
-                                                // if we discover an exclude, it overrules an include
-                                                if (result == -1)
-                                                    break;
-                                            }
-                                            groups[group] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            while (next = next._parent && !result);
-                        }
-                        
-                        if (!result && tag.startsWith(userprefix))
-                            result = obj.access[prop].check('registered');
                     }
-                    
-                    return skip ? result : (result == 1) ? true : false;
-                },
-                
-                /**
-                 * Includes the user or group for this access right
-                 */
-                include : function(id){
-                    if (id instanceof User)
-                        id = userprefix + id._id;
-                    else if (!id && session.user && session.user._id)
-                        id = userprefix + session.user._id;
-                    if (!id)
-                        return false;
-                    if (!obj.hasOwnProperty('access_json'))
-                        obj.access_json = {};
-                    if (!obj.access_json[prop])
-                        obj.access_json[prop] = {};
-                    obj.access_json[prop][id] = 1;
-                    obj.persist();
-                    return true;
-                },
-                
-                /**
-                 * Excludes the user or group from this access right
-                 */
-                exclude : function(id){
-                    if (id instanceof User)
-                        id = userprefix + id._id;
-                    else if (!id && session.user && session.user._id)
-                        id = userprefix + session.user._id;
-                    if (!id)
-                        return false;
-                    if (!obj.hasOwnProperty('access_json'))
-                        obj.access_json = {};
-                    if (!obj.access_json[prop])
-                        obj.access_json[prop] = {};
-                    obj.access_json[prop][id] = -1;
-                    obj.persist();
-                    return true;
-                },
-                
-                /**
-                 * Removes the user or group from this access right
-                 */
-                remove : function(id){
-                    if (id instanceof User)
-                        id = userprefix + id._id;
-                    else if (!id && session.user && session.user._id)
-                        id = userprefix + session.user._id;
-                    if (!id)
-                        return false;
-                    if (!obj.hasOwnProperty('access_json')
-                            || !obj.access_json[prop]
-                            || !obj.access_json[prop][id])
-                        return false;
-                    delete obj.access_json[prop][id];
-                    obj.persist();
-                    return true;
                 }
-            };
+                while (next = next._parent && !result);
+                
+                // and finally for an access right inherited from prototype group memberships
+                if (!result) {
+                    var next = obj;
+                    do {
+                        if (next.__proto__.access_json) {
+                            for (var group in next.__proto__.access_json) {
+                                if (!group.startsWith(userprefix)) {
+                                    
+                                    // look for a group memberships
+                                    if (!groups[group] && next.__proto__.access.check(prop,group)) {
+                                        // and check access rights in that group
+                                        result = next.__proto__.access.check(group,id);
+                                        
+                                        // if we discover an exclude, it overrules an include
+                                        if (result == -1)
+                                            break;
+                                    }
+                                    groups[group] = true;
+                                }
+                            }
+                        }
+                    }
+                    while (next = next._parent && !result);
+                }
+                
+                if (!result && tag.startsWith(userprefix))
+                    result = obj.access.check(prop,'registered');
+            }
             
-            // return the resolved property
-            return property;
+            return skip ? result : (result == 1) ? true : false;
+        },
+        
+        /**
+         * Includes the user or group for this access right
+         */
+        include : function(prop,id){
+            if (id instanceof User)
+                id = userprefix + id._id;
+            else if (!id && session.user && session.user._id)
+                id = userprefix + session.user._id;
+            if (!id)
+                return false;
+            if (!obj.hasOwnProperty('access_json'))
+                obj.access_json = {};
+            if (!obj.access_json[prop])
+                obj.access_json[prop] = {};
+            obj.access_json[prop][id] = 1;
+            obj.persist();
+            return true;
+        },
+        
+        /**
+         * Excludes the user or group from this access right
+         */
+        exclude : function(prop,id){
+            if (id instanceof User)
+                id = userprefix + id._id;
+            else if (!id && session.user && session.user._id)
+                id = userprefix + session.user._id;
+            if (!id)
+                return false;
+            if (!obj.hasOwnProperty('access_json'))
+                obj.access_json = {};
+            if (!obj.access_json[prop])
+                obj.access_json[prop] = {};
+            obj.access_json[prop][id] = -1;
+            obj.persist();
+            return true;
+        },
+        
+        /**
+         * Removes the user or group from this access right
+         */
+        remove : function(prop,id){
+            if (id instanceof User)
+                id = userprefix + id._id;
+            else if (!id && session.user && session.user._id)
+                id = userprefix + session.user._id;
+            if (!id)
+                return false;
+            if (!obj.hasOwnProperty('access_json')
+                    || !obj.access_json[prop]
+                    || !obj.access_json[prop][id])
+                return false;
+            delete obj.access_json[prop][id];
+            obj.persist();
+            return true;
         }
-            
-    }};
+    };
     
     // return object containing metaproperty handlers
     return resolver;

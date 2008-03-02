@@ -19,7 +19,7 @@ else if (req.data.username && req.data.password && req.data.passwordagain && req
             var encodedpw = Packages.helma.util.MD5Encoder.encode(req.data.password);
             var sysop = app.registerUser(req.data.username, encodedpw);
             if (sysop) {
-                root.access.sysop.include(sysop);
+                root.access.include('sysop',sysop);
                 sysop.email = req.data.email;
                 session.login(sysop);
                 res.redirect(this.href());
