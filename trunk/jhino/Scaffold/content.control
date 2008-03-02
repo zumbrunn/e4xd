@@ -2,16 +2,16 @@ var content = this.render(view);
 
 var toolbar = content..*.(@id == 'contenttools');
 
-if (this.access.add.check())
+if (this.access.add)
     toolbar.a += <a class="button" href={this.href('add')}>Add</a>;
 
-if (this.access.edit.check())
+if (this.access.edit)
     toolbar.a += <a class="button" href={this.href('edit')}>Edit</a>;
 
-if (this != root && this.access.remove.check())
+if (this != root && this.access.remove)
     toolbar.a += <a class="button" href={this.href('remove')}>Delete</a>;
 
-if (this.access.sysop.check()) {
+if (this.access.sysop) {
     session.data.shellAuthenticated = true;
     toolbar.a += <a class="button" href={this.href('shell')}>Inspect</a>;
 }

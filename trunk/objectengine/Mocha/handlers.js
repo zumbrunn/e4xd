@@ -98,7 +98,7 @@ function notfound_action(){
     // render auto-action-enabled views 
     else if (obj.actionviews_json 
             && obj.actionviews_json[req.data.action] 
-            && obj.access[req.data.action].check())
+            && obj.access[req.data.action])
         obj.renderPage();
     
     // if the main action was denied, redirect to the login
