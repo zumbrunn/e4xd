@@ -2,7 +2,7 @@
  *  e4xd javascript server-side - openmocha reduced to the max
  * 
  *  Copyright 2008 Chris Zumbrunn <chris@zumbrunn.com> http://zumbrunn.com
- *  version 0.9, March 3, 2008
+ *  version 0.9, March 4, 2008
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
