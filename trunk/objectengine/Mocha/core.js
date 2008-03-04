@@ -187,7 +187,7 @@ Mocha.prototype.__defineGetter__('access',function() {
         },
         
         /**
-         * Returns true if the user or group has this access right
+         * Returns true if the user or group has the specified access right
          */
         check : function(prop,id,skip){
             var result = 0;
@@ -277,7 +277,7 @@ Mocha.prototype.__defineGetter__('access',function() {
         },
         
         /**
-         * Includes the user or group for this access right
+         * Includes the user or group for the specified access right
          */
         include : function(prop,id){
             if (id instanceof User)
@@ -296,7 +296,7 @@ Mocha.prototype.__defineGetter__('access',function() {
         },
         
         /**
-         * Excludes the user or group from this access right
+         * Excludes the user or group from the specified access right
          */
         exclude : function(prop,id){
             if (id instanceof User)
@@ -315,9 +315,9 @@ Mocha.prototype.__defineGetter__('access',function() {
         },
         
         /**
-         * Removes the user or group from this access right
+         * Clears the user or group from the specified access right
          */
-        remove : function(prop,id){
+        clear : function(prop,id){
             if (id instanceof User)
                 id = userprefix + id._id;
             else if (!id && session.user && session.user._id)
