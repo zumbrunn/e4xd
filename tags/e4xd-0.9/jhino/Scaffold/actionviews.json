@@ -1,0 +1,7 @@
+{
+    main    :   true,
+    register:   true,
+    add     :   true,
+    edit    :   true,
+    remove  :   true
+}

@@ -1,0 +1,54 @@
+
+
+*** About OpenMocha
+
+OpenMocha is an open source Javascript website application server 
+and development framework. Quick soft-coding and clean hard-coding 
+in Javascript on the client-side AND the server-side. 
+
+The goal of OpenMocha is to maximize the fun and productivity of 
+Javascript development by blending the gap between browser and server 
+based scripting.
+
+With OpenMocha, a new project can be quickly soft-coded by creating 
+custom Mocha Objects using the web browser. As the project matures, 
+these Mocha Objects can be re-factored and hard-coded in separate 
+code files. The two approaches can be mixed at any time, patching 
+hard-coded applications through soft-coding even during runtime.
+
+
+*** Prerequisites and System Requirements 
+
+To run OpenMocha a Java Virtual Machine 1.4 or better is required.
+
+For FreeBSD and other operating systems with ports collection you may 
+install a JRE or JDK from the ports collection. For Windows, Linux and 
+Solaris you can get a Java runtime or development kit from 
+http://java.sun.com/j2se/downloads/. If you are on Mac OS X then you 
+already have a Java runtime that will work well with OpenMocha.
+
+While you can integrate OpenMocha with other tools such as Apache 
+and MySQL, you do not have to. OpenMocha is pre-configured to be 
+deployed on its own and comes with a built-in object oriented 
+database and web server. 
+
+
+*** Getting started with OpenMocha
+
+For FreeBSD, Linux, Solaris, Mac OS X and other Unix flavors, start 
+the Helma framework by invoking ./start.sh from the command line. On 
+Windows, invoke start.bat instead.
+
+If the java command can not be found, make sure the JAVA_HOME 
+environment variable is set to the location of your Java installation.
+
+With Helma running, you should be able to connect using your 
+browser and the URL http://127.0.0.1:8080/ or http://localhost:8080/
+
+To initialize the setup, complete the user registration form 
+at http://127.0.0.1:8080/exampleapp/register and follow the 
+instructions to copy the security information into the 
+server.properties file. You may then login to your new OpenMocha 
+server via http://127.0.0.1:8080/exampleapp/login and start 
+configuring and deploying your web applications. 
+

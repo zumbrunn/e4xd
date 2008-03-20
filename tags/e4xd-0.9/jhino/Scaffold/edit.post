@@ -1,0 +1,12 @@
+if (!req.data.edit || !this.access.edit)
+    res.redirect(this.href());
+else if (req.data.title) {
+    this.title = req.data.title.trim();
+    this.content = (req.data.content) ? req.data.content : '';
+    this.link = (req.data.link) ? req.data.link : '';
+    this.modified = new Date();
+    res.redirect(this.href());
+}
+else
+    res.redirect(req.data.action);
+

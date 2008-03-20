@@ -1,0 +1,55 @@
+if (!req.data.register)
+    res.redirect(this.href());
+else if (req.data.username && req.data.password && req.data.passwordagain && req.data.email) {
+    
+    // check if the passwords match
+    if (req.data.password != req.data.passwordagain)
+        res.message = <div class="alert">Ooops, the two passwords did not match.</div>;
+    
+    // bootstrap admin access
+    else if (!app.getRegisteredUsers().length || !getProperty('adminAccess')) {
+        
+        // generate bootstrap key
+        var bootstrapKey = Packages.helma.util.MD5Encoder.encode(req.data.username +'-'+ req.data.password);
+        
+        // check bootstrap access
+        if (bootstrapKey == getProperty('adminAccess')) {
+            
+            // setup an admin user and access rights
+            var encodedpw = Packages.helma.util.MD5Encoder.encode(req.data.password);
+            var sysop = app.registerUser(req.data.username, encodedpw);
+            if (sysop) {
+                root.access.include('sysop',sysop);
+                sysop.email = req.data.email;
+                session.login(sysop);
+                res.redirect(this.href());
+            }
+        }else{
+            res.message = <div class="alert">
+                <p>Please copy the following lines to the server.properties file:</p>
+                <code>
+                adminAccess={bootstrapKey}<br/>
+                </code>
+                <p>You may then proceed with your registration:</p>
+            </div>;
+        }
+    }
+    
+    // proceed with regular registrations
+    else if (!app.getUser(req.data.username)) {
+        var encodedpw = Packages.helma.util.MD5Encoder.encode(req.data.password);
+        var user = app.registerUser(req.data.username, encodedpw);
+        if (user) {
+            user.email = req.data.email;
+            session.login(user);
+            res.redirect(this.href());
+        }
+    }
+    else
+        res.message = <div class="alert">Damn, I already know somebody by that name. Can you be someone else?</div>;
+}
+else {
+    res.message = <div class="alert">Hmm, I must be missing something?</div>;
+}
+this.renderPage();
+

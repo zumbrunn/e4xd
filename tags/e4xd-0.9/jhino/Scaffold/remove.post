@@ -1,0 +1,10 @@
+if (req.data.remove && this.access.remove) {
+    parent = this._parent;
+    child = this;
+    this.remove();
+    parent.removeChild(child);
+    res.redirect(parent.href());
+}
+else {
+    res.redirect(this.href());
+}
