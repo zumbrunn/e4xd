@@ -33,7 +33,7 @@ function renderPage() {
  */
 function render(view) {
     
-    if (typeof view ==  'xml')
+    if (typeof view == 'xml')
         return view;
     
     // render functions for client-side use
@@ -46,7 +46,7 @@ function render(view) {
     
     if (skin)
         try {
-            e4x = eval(skin);
+            e4x = eval('<>'+skin+'</>');
         }
         catch(e) {
             e4x = new XML('<span class="failedView">'+ skin 
