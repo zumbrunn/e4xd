@@ -79,7 +79,18 @@ Mocha.resolver = function(handle){
                     
                     // if there is a control for this view, let it handle it first
                     if (obj.controls[prop])
-                        property = obj.controls[prop].call(obj,property);
+                        try {
+                            property = obj.controls[prop].call(obj,property);
+                        }
+                        catch(e) {
+                            property = <span class="failedView" style="visibility:hidden">
+                                Failed view {property +': '+ e}
+                                <script>
+                                    if (window.console)
+                                        console.log('Failed view {property+': '+e}')
+                                </script>
+                            </span>;
+                        }
                     
                     // render the view to e4x if the control has not done so already
                     if (typeof property != 'xml')
