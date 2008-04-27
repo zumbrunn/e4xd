@@ -95,6 +95,13 @@ Mocha.resolver = function(handle){
                     // render the view to e4x if the control has not done so already
                     if (typeof property != 'xml')
                         property = obj.render(property);
+                    
+                    // attempt to add debug attribute
+                    try {
+                        if (app.properties.debug && property.nodeKind() == 'element')
+                            property.@debugview = prop;
+                    }
+                    catch(e){}
                 }
                 else {
                     // first handle overrides for idempotent action methods
