@@ -1,3 +1,6 @@
+if (this.link)
+    res.redirect(this.link);
+
 var content = this.render(view);
 
 var toolbar = content..*.(@id == 'contenttools');
