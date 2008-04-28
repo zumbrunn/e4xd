@@ -35,12 +35,6 @@ function getChildElement(name) {
  */
 function onRequest() {
 
-    // workaround for a bug that causes onInit not to be called when
-    // the root objects is re-fetched from the database
-    // http://helma.org/bugs/show_bug.cgi?id=598
-    if (!root.hasOwnProperty('access_json'))
-        root.onInit();
-
     // sets the actually resolved action, as it is also set by notfound
     req.data.action = req.action;
     
