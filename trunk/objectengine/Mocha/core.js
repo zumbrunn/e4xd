@@ -30,13 +30,11 @@ Mocha.resolver = function(handle){
         var obj = this;
     
         // define metaproperty handlers
-        var resolver = {__metaobject__:{
+        var resolver = {
         
             // define getter for metaproperties
-            get : function(thisObj,prop) {
-                if (thisObj[prop])
-                    return thisObj[prop];
-                
+            __get__ : function(prop) {
+
                 if (!prop)
                     return prop;
                 
@@ -122,11 +120,11 @@ Mocha.resolver = function(handle){
                 }
                 
                 // return the resolved property
-                return property;
+                return property || obj[prop];
             },
                 
             // define setter for metaproperties
-            set : function(thisObj,prop,value) {
+            __put__ : function(prop,value) {
                 
                 // set the idempotent action
                 if (prop.endsWith('_get')
@@ -138,10 +136,10 @@ Mocha.resolver = function(handle){
                 else
                     obj[prop +'_'+ handle.slice(0,-1)] = value;
             }
-        }};
+        };
         
         // return object containing metaproperty handlers
-        return resolver;
+        return new JSAdapter(resolver);
     }
     // return the built resolver function
     return fnc;
@@ -181,33 +179,32 @@ Mocha.prototype.__defineGetter__('fetchlets',Mocha.resolver('fetchlets'))
 /**
  * Handles access object, resolving to appropriate getters and setters
  */
-Mocha.prototype.__defineGetter__('access',function() {
-        
-    // setup closure for current obj instance
+Mocha.prototype.access = Mocha.prototype.__defineGetter__('access',function() {
+
     var obj = this;
     var userprefix = 'user_';
     var groups = {};
     
     // define metaproperty handlers
-    var resolver = {
-        __metaobject__:{
-        
-            // define getter for metaproperties
-            get : function(thisObj,property) {
-                if (thisObj[property])
-                    return thisObj[property];
+    var resolver = new JSAdapter(
+    {
+        // define getter for metaproperties
+        __get__ : function(property) {
+                
+                if (this[property])
+                    return this[property];
                 
                 if (!property)
                     return property;
                 
-                return thisObj.check(property);
-            }
+                return this.check(property);
         },
         
         /**
          * Returns true if the user or group has the specified access right
          */
         check : function(prop,id,skip){
+
             var result = 0;
             var tag = id;
             
@@ -350,7 +347,7 @@ Mocha.prototype.__defineGetter__('access',function() {
             obj.persist();
             return true;
         }
-    };
+    })
     
     // return object containing metaproperty handlers
     return resolver;
